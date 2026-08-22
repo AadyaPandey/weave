@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ReactFlowProvider } from "@xyflow/react";
 
@@ -7,6 +7,9 @@ import LandingPage from "./LandingPage";
 
 import "./styles.css";
 import "@xyflow/react/dist/style.css";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://weeave-server.onrender.com";
 
 class EditorErrorBoundary extends React.Component {
   state = { error: null };
@@ -41,6 +44,24 @@ class EditorErrorBoundary extends React.Component {
 
 function Root() {
   const [showLanding, setShowLanding] = useState(true);
+
+  useEffect(() => {
+    // Ping the backend once when the application starts.
+    fetch(`${API_BASE_URL}/health`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Backend health check failed");
+        }
+
+        return response.json().catch(() => null);
+      })
+      .then((data) => {
+        console.log("Backend is online:", data);
+      })
+      .catch((error) => {
+        console.error("Backend is unavailable:", error);
+      });
+  }, []);
 
   if (showLanding) {
     return <LandingPage onComplete={() => setShowLanding(false)} />;
