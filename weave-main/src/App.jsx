@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ReactFlow,
   Background,
@@ -43,7 +49,7 @@ import {
 } from "lucide-react";
 import { workflowsApi } from "./api/workflows";
 import weaveBrand from "./assets/weave-brand.png";
-
+import LandingPage from "./LandingPage";
 const initialNodes = [
   {
     id: "trigger",
@@ -455,6 +461,8 @@ function Inspector({ node, onClose, onUpdate, onDelete }) {
 }
 
 function App() {
+  const [showLanding, setShowLanding] = useState(true);
+
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedId, setSelectedId] = useState(null);
@@ -491,6 +499,14 @@ function App() {
     },
     [setEdges],
   );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLanding(false);
+    }, 7000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const addNode = (item) => {
     const id = `${item.title.toLowerCase().replaceAll(" ", "-")}-${Date.now()}`;
@@ -710,6 +726,16 @@ function App() {
       setRunning(false);
     }
   };
+
+  if (showLanding) {
+    return (
+      <div className="landing-screen">
+        <div className="landing-glow" />
+
+        <img src={weaveBrand} alt="Weave" className="landing-logo" />
+      </div>
+    );
+  }
 
   return (
     <div className="app-shell">
@@ -987,7 +1013,6 @@ function App() {
               ))}
             </aside>
           )}
-
         </div>
       </main>
     </div>

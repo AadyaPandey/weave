@@ -1,0 +1,93 @@
+.landing-page {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+  background: #000;
+}
+
+.landing-brand {
+  position: relative;
+  z-index: 2;
+
+  width: min(88vw, 1700px);
+  height: auto;
+
+  opacity: 0;
+
+  filter:
+    drop-shadow(0 0 15px rgba(180, 120, 255, 0.7))
+    drop-shadow(0 0 50px rgba(150, 70, 255, 0.4));
+
+  animation: weave-in 1.5s ease-out forwards;
+}
+
+.landing-glow {
+  position: absolute;
+
+  width: 45vw;
+  height: 45vw;
+
+  border-radius: 50%;
+
+  background: rgba(130, 60, 255, 0.18);
+  filter: blur(120px);
+}
+
+.landing-exit .landing-brand {
+  animation: weave-out 0.8s ease-in forwards;
+}
+
+.landing-exit .landing-glow {
+  animation: glow-out 0.8s ease-in forwards;
+}
+
+@keyframes weave-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+    filter: blur(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter:
+      drop-shadow(0 0 15px rgba(180, 120, 255, 0.7))
+      drop-shadow(0 0 50px rgba(150, 70, 255, 0.4));
+  }
+}
+
+@keyframes weave-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.12);
+    filter: blur(15px);
+  }
+}
+
+@keyframes glow-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
