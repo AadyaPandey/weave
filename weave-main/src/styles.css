@@ -905,3 +905,66 @@ button {
 .run-step strong, .run-step small { display: block; }
 .run-step strong { color: #ddd3e8; font-size: 10px; }
 .run-step small { margin-top: 2px; color: #8e819d; font-size: 8px; }
+.landing-page {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+
+  width: 100vw;
+  height: 100vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #423667;
+
+  overflow: hidden;
+
+  transform: translateY(0);
+}
+
+.landing-logo {
+  position: relative;
+  z-index: 2;
+
+  width: min(85vw, 1700px);
+  height: auto;
+
+  display: block;
+
+  user-select: none;
+  pointer-events: none;
+
+  filter: drop-shadow(0 0 18px rgba(120, 70, 220, 0.75));
+
+  animation: logo-enter 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes logo-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Entire intro slides upward */
+.landing-page.landing-exit {
+  animation: landing-slide-up 0.8s cubic-bezier(0.76, 0, 0.24, 1)
+    forwards;
+}
+
+@keyframes landing-slide-up {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
