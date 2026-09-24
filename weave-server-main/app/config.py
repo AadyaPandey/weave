@@ -10,7 +10,7 @@ load_dotenv()
 DATABASE_PATH = os.getenv("DATABASE_PATH", "weave.db")
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # SMTP transport settings are server-owned so they are not exposed in workflow
 # definitions or the browser.
