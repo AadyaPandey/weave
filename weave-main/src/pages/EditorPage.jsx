@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   addEdge,
   Background,
@@ -18,6 +24,7 @@ import {
   Trash2,
   Upload,
   Zap,
+  GitBranch,
 } from "lucide-react";
 import HistoryPanel from "../components/HistoryPanel";
 import Inspector from "../components/Inspector";
@@ -28,6 +35,7 @@ import {
   canvasNodeFromWorkflow,
   initialEdges,
   initialNodes,
+  workflowPresets,
 } from "../data/workflowCatalog";
 import { workflowsApi } from "../api/workflows";
 
@@ -35,9 +43,11 @@ function configuredInputFields(nodes) {
   const fields = new Set();
   const inspect = (value) => {
     if (typeof value === "string") {
-      for (const match of value.matchAll(/\{\{input\.([\w-]+)\}\}/g)) fields.add(match[1]);
+      for (const match of value.matchAll(/\{\{input\.([\w-]+)\}\}/g))
+        fields.add(match[1]);
     } else if (Array.isArray(value)) value.forEach(inspect);
-    else if (value && typeof value === "object") Object.values(value).forEach(inspect);
+    else if (value && typeof value === "object")
+      Object.values(value).forEach(inspect);
   };
   nodes.forEach((node) => inspect(node.data.config));
   return [...fields];
@@ -161,6 +171,44 @@ export default function EditorPage() {
     setEdges((current) => current.filter((edge) => edge.id !== id));
     setSelectedEdgeId(null);
     setSaved(false);
+  };
+
+  const changeDefaultFlow = (flowKey) => {
+    const preset = workflowPresets[flowKey];
+
+    if (!preset) return;
+
+    if (
+      !saved &&
+      !window.confirm("You have unsaved changes. Replace the current workflow?")
+    ) {
+      return;
+    }
+
+    // Deep copy so editing one flow doesn't modify the template
+    const newNodes = preset.nodes.map((node) => ({
+      ...node,
+      position: { ...node.position },
+      data: {
+        ...node.data,
+        config: { ...(node.data.config || {}) },
+      },
+    }));
+
+    const newEdges = preset.edges.map((edge) => ({
+      ...edge,
+    }));
+
+    setNodes(newNodes);
+    setEdges(newEdges);
+
+    setWorkflowId(null);
+    setWorkflowName(preset.name);
+    setSelectedId(null);
+    setSelectedEdgeId(null);
+    setSaved(false);
+
+    setNotice(`Loaded "${preset.name}" flow.`);
   };
 
   const saveWorkflow = async () => {
@@ -364,6 +412,22 @@ export default function EditorPage() {
             >
               <History size={16} /> History
             </button>
+
+            <button
+              className="secondary-button"
+              onClick={() => {
+                const useConditionFlow =
+                  workflowName === "City Weather Email AI";
+
+                changeDefaultFlow(
+                  useConditionFlow ? "conditionLLM" : "weatherEmail",
+                );
+              }}
+            >
+              <GitBranch size={16} />
+              Change Flow
+            </button>
+
             <button className="secondary-button" onClick={saveWorkflow}>
               <Save size={16} /> Save
             </button>
@@ -390,7 +454,21 @@ export default function EditorPage() {
                 <span>Draft workflow</span>
               </div>
               <div className="canvas-tools">
-                {(selectedId || selectedEdgeId) && <button className="tool-button delete-selection" onClick={() => selectedEdgeId ? deleteEdge() : deleteNode(selectedId)} title={selectedEdgeId ? "Delete selected connection" : "Delete selected node"}><Trash2 size={15} /></button>}
+                {(selectedId || selectedEdgeId) && (
+                  <button
+                    className="tool-button delete-selection"
+                    onClick={() =>
+                      selectedEdgeId ? deleteEdge() : deleteNode(selectedId)
+                    }
+                    title={
+                      selectedEdgeId
+                        ? "Delete selected connection"
+                        : "Delete selected node"
+                    }
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                )}
                 <button
                   className="tool-button"
                   onClick={copyWorkflow}
@@ -440,10 +518,27 @@ export default function EditorPage() {
                   setSaved(false);
               }}
               onConnect={onConnect}
-              onNodeClick={(_, node) => { setSelectedId(node.id); setSelectedEdgeId(null); }}
-              onEdgeClick={(_, edge) => { setSelectedEdgeId(edge.id); setSelectedId(null); }}
-              onPaneClick={() => { setSelectedId(null); setSelectedEdgeId(null); }}
-              onKeyDown={(event) => { if ((event.key === "Backspace" || event.key === "Delete") && selectedEdgeId) { event.preventDefault(); deleteEdge(); } }}
+              onNodeClick={(_, node) => {
+                setSelectedId(node.id);
+                setSelectedEdgeId(null);
+              }}
+              onEdgeClick={(_, edge) => {
+                setSelectedEdgeId(edge.id);
+                setSelectedId(null);
+              }}
+              onPaneClick={() => {
+                setSelectedId(null);
+                setSelectedEdgeId(null);
+              }}
+              onKeyDown={(event) => {
+                if (
+                  (event.key === "Backspace" || event.key === "Delete") &&
+                  selectedEdgeId
+                ) {
+                  event.preventDefault();
+                  deleteEdge();
+                }
+              }}
               fitView
               colorMode="dark"
               defaultEdgeOptions={{
@@ -494,25 +589,105 @@ export default function EditorPage() {
           )}
         </div>
         {runInputOpen && (
-          <div className="run-input-overlay" role="dialog" aria-modal="true" aria-labelledby="run-workflow-title">
-            <form className="run-input-dialog" onSubmit={(event) => { event.preventDefault(); runWorkflow(); }}>
+          <div
+            className="run-input-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="run-workflow-title"
+          >
+            <form
+              className="run-input-dialog"
+              onSubmit={(event) => {
+                event.preventDefault();
+                runWorkflow();
+              }}
+            >
               <div className="run-input-header">
-                <div><div className="eyebrow">RUN WORKFLOW</div><h3 id="run-workflow-title">Provide run-time values</h3></div>
-                <button type="button" className="icon-button" onClick={() => setRunInputOpen(false)}>×</button>
+                <div>
+                  <div className="eyebrow">RUN WORKFLOW</div>
+                  <h3 id="run-workflow-title">Provide run-time values</h3>
+                </div>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => setRunInputOpen(false)}
+                >
+                  ×
+                </button>
               </div>
-              <p className="run-input-copy">Only fields marked <strong>Run input</strong> in node settings appear here. Values from connected nodes continue automatically.</p>
-              {Object.keys(runInput).length ? Object.keys(runInput).map((field) => (
-                <label className="friendly-field" key={field}><span className="field-label">{field}</span><textarea className="field textarea compact-textarea" value={runInput[field]} onChange={(event) => setRunInput((current) => ({ ...current, [field]: event.target.value }))} placeholder={`Enter ${field}…`} autoFocus={Object.keys(runInput)[0] === field} /></label>
-              )) : <div className="no-run-input">This workflow does not need any run-time values.</div>}
-              <div className="run-input-actions"><button type="button" className="secondary-button" onClick={() => setRunInputOpen(false)}>Cancel</button><button className="run-button" disabled={running}><Play size={15} fill="currentColor" /> {running ? "Running..." : "Run workflow"}</button></div>
+              <p className="run-input-copy">
+                Only fields marked <strong>Run input</strong> in node settings
+                appear here. Values from connected nodes continue automatically.
+              </p>
+              {Object.keys(runInput).length ? (
+                Object.keys(runInput).map((field) => (
+                  <label className="friendly-field" key={field}>
+                    <span className="field-label">{field}</span>
+                    <textarea
+                      className="field textarea compact-textarea"
+                      value={runInput[field]}
+                      onChange={(event) =>
+                        setRunInput((current) => ({
+                          ...current,
+                          [field]: event.target.value,
+                        }))
+                      }
+                      placeholder={`Enter ${field}…`}
+                      autoFocus={Object.keys(runInput)[0] === field}
+                    />
+                  </label>
+                ))
+              ) : (
+                <div className="no-run-input">
+                  This workflow does not need any run-time values.
+                </div>
+              )}
+              <div className="run-input-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setRunInputOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button className="run-button" disabled={running}>
+                  <Play size={15} fill="currentColor" />{" "}
+                  {running ? "Running..." : "Run workflow"}
+                </button>
+              </div>
             </form>
           </div>
         )}
         {runResult && (
           <div className="result-toast" role="status">
-            <div className="result-toast-head"><div><div className="eyebrow">LATEST OUTPUT</div><strong>Run #{runResult.run_id} completed</strong></div><button className="icon-button" onClick={() => setRunResult(null)}>×</button></div>
-            {displayOutput(runResult.output) !== null ? <div className="result-message">{displayOutput(runResult.output)}</div> : <pre>{JSON.stringify(runResult.output, null, 2)}</pre>}
-            <button className="result-history-link" onClick={() => { setHistoryOpen(true); loadRuns(); }}>View execution details →</button>
+            <div className="result-toast-head">
+              <div>
+                <div className="eyebrow">LATEST OUTPUT</div>
+                <strong>Run #{runResult.run_id} completed</strong>
+              </div>
+              <button
+                className="icon-button"
+                onClick={() => setRunResult(null)}
+              >
+                ×
+              </button>
+            </div>
+            {displayOutput(runResult.output) !== null ? (
+              <div className="result-message">
+                {displayOutput(runResult.output)}
+              </div>
+            ) : (
+              <pre>{JSON.stringify(runResult.output, null, 2)}</pre>
+            )}
+            <button
+              className="result-history-link"
+              onClick={() => {
+                setHistoryOpen(true);
+                loadRuns();
+              }}
+            >
+              View execution details →
+            </button>
           </div>
         )}
       </main>
