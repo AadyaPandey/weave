@@ -84,6 +84,8 @@ export default function EditorPage() {
   const importInputRef = useRef(null);
   const nodeTypes = useMemo(() => ({ workflow: WorkflowNode }), []);
 
+  const [currentFlowKey, setCurrentFlowKey] = useState("weatherEmail");
+
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 5000);
@@ -178,37 +180,29 @@ export default function EditorPage() {
 
     if (!preset) return;
 
-    if (
-      !saved &&
-      !window.confirm("You have unsaved changes. Replace the current workflow?")
-    ) {
-      return;
-    }
-
-    // Deep copy so editing one flow doesn't modify the template
-    const newNodes = preset.nodes.map((node) => ({
+    const nextNodes = preset.nodes.map((node) => ({
       ...node,
-      position: { ...node.position },
       data: {
         ...node.data,
-        config: { ...(node.data.config || {}) },
+        config: node.data?.config ? { ...node.data.config } : {},
       },
     }));
 
-    const newEdges = preset.edges.map((edge) => ({
+    const nextEdges = preset.edges.map((edge) => ({
       ...edge,
     }));
 
-    setNodes(newNodes);
-    setEdges(newEdges);
+    setCurrentFlowKey(flowKey);
+    setNodes(nextNodes);
+    setEdges(nextEdges);
 
-    setWorkflowId(null);
     setWorkflowName(preset.name);
+    setWorkflowId(null);
     setSelectedId(null);
     setSelectedEdgeId(null);
     setSaved(false);
 
-    setNotice(`Loaded "${preset.name}" flow.`);
+    setNotice(`${preset.name} loaded.`);
   };
 
   const saveWorkflow = async () => {
@@ -413,20 +407,43 @@ export default function EditorPage() {
               <History size={16} /> History
             </button>
 
-            <button
-              className="secondary-button"
-              onClick={() => {
-                const useConditionFlow =
-                  workflowName === "City Weather Email AI";
+            <div className="flow-buttons">
+              <button
+                className={`secondary-button ${
+                  currentFlowKey === "weatherEmail" ? "active" : ""
+                }`}
+                onClick={() => changeDefaultFlow("weatherEmail")}
+              >
+                1
+              </button>
 
-                changeDefaultFlow(
-                  useConditionFlow ? "conditionLLM" : "weatherEmail",
-                );
-              }}
-            >
-              <GitBranch size={16} />
-              Change Flow
-            </button>
+              <button
+                className={`secondary-button ${
+                  currentFlowKey === "conditionLLM" ? "active" : ""
+                }`}
+                onClick={() => changeDefaultFlow("conditionLLM")}
+              >
+                2
+              </button>
+
+              <button
+                className={`secondary-button ${
+                  currentFlowKey === "countryAnalysis" ? "active" : ""
+                }`}
+                onClick={() => changeDefaultFlow("countryAnalysis")}
+              >
+                3
+              </button>
+
+              <button
+                className={`secondary-button ${
+                  currentFlowKey === "supportDecision" ? "active" : ""
+                }`}
+                onClick={() => changeDefaultFlow("supportDecision")}
+              >
+                4
+              </button>
+            </div>
 
             <button className="secondary-button" onClick={saveWorkflow}>
               <Save size={16} /> Save
