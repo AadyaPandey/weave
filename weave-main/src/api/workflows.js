@@ -3,13 +3,16 @@ import toast from "react-hot-toast";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://weave-server-1l60.onrender.com";
 
-const PING_URL = "https://weave-server-1l60.onrender.com/health";
+const PING_URL = `${API_BASE_URL}/health`;
 
 let serverReadyPromise = null;
 
+/**
+ * Wake up / verify the backend before making an API request.
+ * If multiple requests happen at the same time, they share the
+ * same health-check request.
+ */
 async function waitForServer() {
-  // If another request is already checking the server,
-  // reuse the same promise instead of sending multiple pings.
   if (serverReadyPromise) {
     return serverReadyPromise;
   }
@@ -36,6 +39,8 @@ async function waitForServer() {
         id: toastId,
       });
 
+      console.error("Server health check failed:", error);
+
       throw error;
     } finally {
       serverReadyPromise = null;
@@ -45,16 +50,19 @@ async function waitForServer() {
   return serverReadyPromise;
 }
 
+/**
+ * Generic API request helper.
+ * ALWAYS checks the backend before making the actual request.
+ */
 async function request(path, options = {}) {
-  // ALWAYS ping the backend before making the actual API request
   await waitForServer();
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
     },
-    ...options,
   });
 
   const body = await response.json().catch(() => null);
