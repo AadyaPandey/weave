@@ -9,7 +9,8 @@ import "./styles.css";
 import "@xyflow/react/dist/style.css";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://weeave-server.onrender.com";
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://weave-server-1l60.onrender.com/health";
 
 class EditorErrorBoundary extends React.Component {
   state = { error: null };
